@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MindHunters: The Shapeshifter Within</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #ff2244;
+    --green: #00ff88;
+    --blue: #4488ff;
+    --orange: #ff8833;
+    --yellow: #ffdd00;
+    --bg: #060610;
+    --surface: #0d0d1e;
+    --surface2: #12122a;
+    --border: rgba(255,255,255,0.07);
+    --text: #dde0ff;
+    --muted: #556;
+    --font-head: 'Orbitron', monospace;
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-body: 'Exo 2', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    font-family: var(--font-body);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── SCANLINE OVERLAY ─────────────────────────── */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ─── STARS ───────────────────────────────────── */
+  #stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .star { position: absolute; background: #fff; border-radius: 50%; }
+  @keyframes twinkle { 0%,100%{opacity:0.1} 50%{opacity:0.8} }
+
+  /* ─── SCREENS ─────────────────────────────────── */
+  .screen {
+    display: none;
+    position: relative;
+    z-index: 10;
+    min-height: 100vh;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+    gap: 1.4rem;
+  }
+  .screen.active { display: flex; animation: screenIn 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+  @keyframes screenIn { from{opacity:0;transform:translateY(18px) scale(0.98)} to{opacity:1;transform:none} }
+
+  /* ─── TYPOGRAPHY ──────────────────────────────── */
+  .head { font-family: var(--font-head); font-weight: 800; color: #fff; text-align: center; }
+  .head.xl { font-size: clamp(26px, 5vw, 42px); line-height: 1.15; }
+  .head.lg { font-size: clamp(20px, 4vw, 30px); }
+  .head.md { font-size: clamp(16px, 3vw, 22px); }
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--red);
+    opacity: 0.8;
+  }
+  .muted { color: var(--muted); font-size: 14px; text-align: center; max-width: 460px; line-height: 1.7; }
+
+  /* ─── BUTTONS ─────────────────────────────────── */
+  .btn {
+    font-family: var(--font-head);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 13px 26px;
+    border-radius: 6px;
+    border: 1.5px solid var(--red);
+    background: transparent;
+    color: var(--red);
+    cursor: pointer;
+    transition: all 0.18s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--red);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.2s ease;
+    z-index: -1;
+  }
+  .btn:hover { color: #fff; transform: scale(1.04); }
+  .btn:hover::before { transform: scaleX(1); }
+  .btn:active { transform: scale(0.97); }
+  .btn.green { border-color: var(--green); color: var(--green); }
+  .btn.green::before { background: var(--green); }
+  .btn.green:hover { color: var(--bg); }
+  .btn.blue { border-color: var(--blue); color: var(--blue); }
+  .btn.blue::before { background: var(--blue); }
+  .btn.blue:hover { color: #fff; }
+  .btn.ghost { border-color: #334; color: #556; }
+  .btn.ghost::before { background: #1a1a2e; }
+  .btn.ghost:hover { color: #aaa; }
+  .btn.lg { font-size: 13px; padding: 16px 36px; }
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+  /* ─── CARDS ───────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+  }
+  .card.glow-red { border-color: rgba(255,34,68,0.3); box-shadow: 0 0 20px rgba(255,34,68,0.08); }
+  .card.glow-green { border-color: rgba(0,255,136,0.3); box-shadow: 0 0 20px rgba(0,255,136,0.08); }
+  .card.glow-blue { border-color: rgba(68,136,255,0.3); box-shadow: 0 0 20px rgba(68,136,255,0.08); }
+
+  /* ─── HUD ─────────────────────────────────────── */
+  #hud {
+    position: fixed; top: 0; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 18px;
+    background: rgba(6,6,16,0.9);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    z-index: 1000;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+  #hud .logo { color: var(--red); font-size: 13px; letter-spacing: 2px; }
+  #hud .stats { display: flex; gap: 18px; }
+  #hud .stats span { color: var(--green); }
+  #nav-back { cursor: pointer; transition: color 0.2s; }
+  #nav-back:hover { color: var(--red); }
+
+  /* ─── EMERGENCY BTN ───────────────────────────── */
+  #emergency-btn {
+    position: fixed; bottom: 16px; right: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px; letter-spacing: 1.5px;
+    color: #334; border: 1px solid #1e1e33;
+    background: rgba(6,6,16,0.8);
+    padding: 7px 12px; border-radius: 6px;
+    cursor: pointer; transition: all 0.2s; z-index: 1000;
+  }
+  #emergency-btn:hover { color: var(--blue); border-color: var(--blue); }
+
+  /* ─── EMERGENCY OVERLAY ───────────────────────── */
+  #emergency-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(4,4,18,0.97);
+    z-index: 9000; flex-direction: column;
+    align-items: center; justify-content: center; gap: 2rem;
+    backdrop-filter: blur(20px);
+  }
+  #emergency-overlay.show { display: flex; animation: screenIn 0.4s ease both; }
+  .breath-circle {
+    width: 130px; height: 130px;
+    border-radius: 50%;
+    border: 2px solid var(--blue);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-head); font-size: 12px; color: var(--blue); letter-spacing: 2px;
+    animation: breathe 8s ease-in-out infinite;
+  }
+  @keyframes breathe { 0%,100%{transform:scale(1);opacity:0.6} 40%{transform:scale(1.5);opacity:1} 70%{transform:scale(1.5);opacity:1} }
+
+  /* ─── ENTRY SCREEN ────────────────────────────── */
+  #s-entry { padding-top: 80px; }
+  #s-entry .big-title { font-family: var(--font-head); font-size: clamp(30px,6vw,52px); font-weight: 900; text-align: center; line-height: 1.1; }
+  #s-entry .big-title .accent { color: var(--red); display: block; }
+  .entry-badge {
+    display: flex; gap: 8px; align-items: center;
+    background: rgba(255,34,68,0.08);
+    border: 1px solid rgba(255,34,68,0.2);
+    padding: 6px 16px; border-radius: 100px;
+    font-family: var(--font-mono); font-size: 11px; color: var(--red); letter-spacing: 2px;
+  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red); animation: pulse-dot 1.5s infinite; }
+  @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.3;transform:scale(0.6)} }
+  .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 400px; }
+  .mode-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px;
+    cursor: pointer; transition: all 0.2s;
+    text-align: center;
+  }
+  .mode-card:hover { border-color: rgba(255,34,68,0.4); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,34,68,0.1); }
+  .mode-card .mode-icon { font-size: 22px; margin-bottom: 6px; }
+  .mode-card .mode-name { font-family: var(--font-head); font-size: 11px; letter-spacing: 1px; color: var(--red); }
+  .mode-card .mode-desc { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* ─── FOOD FLIP CARDS ─────────────────────────── */
+  .food-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; width: 100%; max-width: 680px; }
+  .food-card { perspective: 800px; height: 190px; cursor: pointer; }
+  .food-inner {
+    width: 100%; height: 100%; position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.65s cubic-bezier(0.4,0,0.2,1);
+    border-radius: 14px;
+  }
+  .food-card.flipped .food-inner { transform: rotateY(180deg); }
+  .food-front, .food-back {
+    position: absolute; width: 100%; height: 100%;
+    backface-visibility: hidden; border-radius: 14px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px;
+  }
+  .food-front {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    gap: 8px; transition: border-color 0.2s;
+  }
+  .food-card:hover .food-front { border-color: rgba(255,34,68,0.4); }
+  .food-img { width: 72px; height: 72px; object-fit: cover; border-radius: 10px; }
+  .food-name { font-family: var(--font-head); font-size: 11px; letter-spacing: 1px; color: #aaa; }
+  .food-hint { font-size: 10px; color: #334; margin-top: 2px; }
+  .food-back {
+    background: #1a0812;
+    border: 1px solid rgba(255,34,68,0.4);
+    transform: rotateY(180deg);
+    gap: 5px;
+  }
+  .threat-badge { font-family: var(--font-mono); font-size: 10px; color: var(--red); letter-spacing: 2px; margin-bottom: 4px; }
+  .ing-pill { font-size: 10px; color: #ff8899; background: rgba(255,34,68,0.1); border: 1px solid rgba(255,34,68,0.2); padding: 2px 7px; border-radius: 100px; }
+
+  /* ─── SYSTEM BOOT ─────────────────────────────── */
+  #s-system { background: #040410; }
+  .sys-logo { font-family: var(--font-head); font-size: 32px; font-weight: 900; color: var(--green); animation: glitch 3s infinite; }
+  @keyframes glitch {
+    0%,95%,100% { clip-path:none; transform:none; text-shadow:none; }
+    96% { clip-path:polygon(0 20%,100% 20%,100% 45%,0 45%); transform:translateX(-4px); text-shadow: 3px 0 var(--red); }
+    98% { clip-path:polygon(0 55%,100% 55%,100% 75%,0 75%); transform:translateX(4px); text-shadow: -3px 0 var(--blue); }
+  }
+  #sys-lines { display: flex; flex-direction: column; gap: 12px; width: 300px; }
+  .sys-line {
+    font-family: var(--font-mono); font-size: 13px; color: var(--green);
+    opacity: 0; white-space: nowrap; overflow: hidden; width: 0;
+    border-right: 2px solid var(--green);
+  }
+  .sys-line.show { opacity: 1; animation: typeline 0.9s steps(35) forwards; }
+  .sys-line.done { border-right: none; width: auto; }
+  @keyframes typeline { from{width:0} to{width:100%} }
+
+  /* ─── INPUT SCREEN ────────────────────────────── */
+  .food-sel-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; width: 100%; max-width: 540px; }
+  .food-sel {
+    background: var(--surface); border: 1.5px solid #1a1a2e;
+    border-radius: 10px; padding: 12px 8px;
+    text-align: center; cursor: pointer; transition: all 0.2s;
+  }
+  .food-sel:hover { border-color: rgba(255,34,68,0.5); }
+  .food-sel.sel { border-color: var(--red); background: rgba(255,34,68,0.08); }
+  .food-sel img { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; margin-bottom: 6px; }
+  .food-sel .sel-name { font-family: var(--font-head); font-size: 10px; letter-spacing: 1px; color: #778; }
+  .food-sel.sel .sel-name { color: var(--red); }
+  .mood-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; width: 100%; max-width: 400px; }
+  .mood-opt {
+    background: var(--surface); border: 1.5px solid #1a1a2e;
+    border-radius: 10px; padding: 14px 8px;
+    text-align: center; cursor: pointer; transition: all 0.2s;
+  }
+  .mood-opt:hover { border-color: rgba(255,136,51,0.5); }
+  .mood-opt.sel { border-color: var(--orange); background: rgba(255,136,51,0.08); }
+  .mood-icon { font-size: 26px; display: block; margin-bottom: 6px; }
+  .mood-name { font-family: var(--font-head); font-size: 10px; letter-spacing: 1px; color: #778; }
+  .mood-opt.sel .mood-name { color: var(--orange); }
+  .section-lbl { font-family: var(--font-mono); font-size: 11px; letter-spacing: 2px; color: #334; text-transform: uppercase; align-self: flex-start; }
+
+  /* ─── CAMERA SECTION ──────────────────────────── */
+  .camera-zone {
+    width: 100%; max-width: 540px;
+    background: var(--surface);
+    border: 2px dashed #223;
+    border-radius: 14px;
+    padding: 20px;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    transition: border-color 0.2s;
+  }
+  .camera-zone:hover { border-color: rgba(68,136,255,0.4); }
+  .camera-zone.has-img { border-style: solid; border-color: rgba(68,136,255,0.5); }
+  #cam-preview { display: none; width: 100%; max-height: 180px; object-fit: cover; border-radius: 10px; }
+  #cam-preview.show { display: block; }
+  .upload-label {
+    font-family: var(--font-head); font-size: 11px; letter-spacing: 2px;
+    color: var(--blue); cursor: pointer;
+    border: 1px solid rgba(68,136,255,0.4);
+    padding: 10px 20px; border-radius: 6px;
+    transition: all 0.2s;
+  }
+  .upload-label:hover { background: rgba(68,136,255,0.1); }
+  #cam-input { display: none; }
+  #cam-analyze-btn { display: none; }
+
+  /* ─── ALERT SCREEN ────────────────────────────── */
+  #s-alert {
+    background: #0a0004;
+    animation: flash-bg 1.2s ease-in-out infinite, screenIn 0.5s ease both;
+  }
+  @keyframes flash-bg { 0%,100%{background:#0a0004} 50%{background:#1a0008} }
+  .alert-shake { animation: shake 0.4s ease 0.1s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+  .alert-ring {
+    width: 90px; height: 90px; border-radius: 50%;
+    border: 3px solid var(--red);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    animation: ring-pulse 1s infinite;
+    box-shadow: 0 0 0 0 rgba(255,34,68,0.5);
+  }
+  @keyframes ring-pulse { 0%{box-shadow:0 0 0 0 rgba(255,34,68,0.5)} 100%{box-shadow:0 0 0 18px rgba(255,34,68,0)} }
+  .alert-head { font-family: var(--font-head); font-size: clamp(28px,6vw,48px); font-weight: 900; color: #fff; text-align: center; line-height: 1; }
+  .alert-head .red { color: var(--red); display: block; }
+  .alert-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 520px; }
+  .alert-panel {
+    background: rgba(0,0,0,0.5); border: 1px solid #330011;
+    border-radius: 12px; padding: 16px;
+  }
+  .ap-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 2px; color: var(--red); margin-bottom: 8px; opacity: 0.8; }
+  .ap-content { font-size: 13px; color: #ddd; line-height: 1.6; }
+  .imposter-type { display: inline-block; background: rgba(255,34,68,0.15); border: 1px solid rgba(255,34,68,0.4); color: var(--red); font-family: var(--font-head); font-size: 10px; letter-spacing: 1px; padding: 3px 10px; border-radius: 4px; margin-top: 4px; }
+
+  /* ─── AI ANALYSIS BOX ─────────────────────────── */
+  .ai-box {
+    width: 100%; max-width: 540px;
+    background: rgba(0,255,136,0.04);
+    border: 1px solid rgba(0,255,136,0.2);
+    border-radius: 12px; padding: 16px;
+    font-family: var(--font-mono); font-size: 12px; color: var(--green);
+    line-height: 1.7; min-height: 80px;
+  }
+  .ai-box .ai-label { font-size: 10px; letter-spacing: 2px; color: #44aa66; margin-bottom: 8px; }
+  .ai-typing::after { content: '▊'; animation: blink 0.6s step-end infinite; }
+  @keyframes blink { 50%{opacity:0} }
+
+  /* ─── REVEAL SCREEN ───────────────────────────── */
+  .reveal-split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 600px; }
+  .rev-panel { background: var(--surface); border-radius: 14px; padding: 22px; }
+  .rev-panel.mind { border: 1px solid rgba(68,136,255,0.35); }
+  .rev-panel.food { border: 1px solid rgba(255,102,68,0.35); }
+  .rev-icon { font-size: 30px; margin-bottom: 10px; }
+  .rev-title { font-family: var(--font-head); font-size: 10px; letter-spacing: 2px; margin-bottom: 10px; }
+  .rev-title.b { color: var(--blue); }
+  .rev-title.o { color: var(--orange); }
+  .rev-text { font-size: 13px; color: #99a; line-height: 1.65; }
+  .ing-list { display: none; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .ing-list.show { display: flex; animation: screenIn 0.4s ease both; }
+  .ing-tag { font-size: 10px; color: #ff8899; background: rgba(255,34,68,0.1); border: 1px solid rgba(255,34,68,0.25); padding: 3px 9px; border-radius: 100px; }
+
+  /* ─── DECISION SCREEN ─────────────────────────── */
+  .countdown-ring {
+    width: 90px; height: 90px; border-radius: 50%;
+    border: 3px solid var(--red);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .countdown-num { font-family: var(--font-head); font-size: 36px; font-weight: 900; color: var(--red); }
+  .countdown-lbl { font-family: var(--font-mono); font-size: 9px; color: #445; letter-spacing: 1px; }
+
+  /* ─── RESULT SCREEN ───────────────────────────── */
+  .result-burst { font-size: 64px; animation: burst 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+  @keyframes burst { from{transform:scale(0.3) rotate(-15deg);opacity:0} to{transform:none;opacity:1} }
+  .result-head { font-family: var(--font-head); font-size: clamp(22px,5vw,36px); font-weight: 900; }
+  .savage-card {
+    background: var(--surface); border: 1px solid #223;
+    border-radius: 12px; padding: 16px 22px;
+    max-width: 420px; font-size: 14px; color: #778;
+    font-style: italic; line-height: 1.6; text-align: center;
+    border-left: 3px solid var(--red);
+  }
+
+  /* ─── SURVIVAL SCREEN ─────────────────────────── */
+  .mission-card {
+    background: var(--surface2);
+    border: 1.5px solid #223; border-radius: 16px;
+    padding: 28px; width: 100%; max-width: 480px;
+  }
+  .mission-badge { font-family: var(--font-mono); font-size: 10px; letter-spacing: 2px; color: var(--blue); margin-bottom: 12px; }
+  .mission-title { font-family: var(--font-head); font-size: 20px; color: #fff; margin-bottom: 6px; }
+  .mission-timer { font-family: var(--font-head); font-size: 44px; font-weight: 900; color: var(--green); margin: 16px 0; }
+
+  /* ─── STORY SCREEN ────────────────────────────── */
+  .case-file { background: var(--surface2); border: 1px solid #223; border-radius: 14px; padding: 26px; width: 100%; max-width: 540px; }
+  .case-hdr { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 18px; }
+  .case-id { font-family: var(--font-mono); font-size: 10px; color: var(--blue); letter-spacing: 2px; }
+  .case-title { font-family: var(--font-head); font-size: 17px; color: #fff; margin-top: 3px; }
+  .case-body { font-size: 14px; color: #778; line-height: 1.75; margin-bottom: 18px; }
+  .story-btn { width: 100%; background: var(--surface); border: 1px solid #223; border-radius: 8px; padding: 13px 16px; font-size: 13px; color: #889; cursor: pointer; transition: all 0.2s; text-align: left; margin-bottom: 8px; }
+  .story-btn:hover { border-color: rgba(68,136,255,0.5); color: var(--blue); }
+  .story-outcome { display: none; background: rgba(68,136,255,0.05); border: 1px solid rgba(68,136,255,0.25); border-radius: 10px; padding: 14px; font-size: 13px; color: #aab; line-height: 1.7; margin-top: 8px; }
+  .story-outcome.show { display: block; animation: screenIn 0.4s ease both; }
+
+  /* ─── LEADERBOARD SCREEN ──────────────────────── */
+  #s-leaderboard .lb-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; width: 100%; max-width: 500px; }
+  .lb-row { display: flex; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px solid #111; font-size: 13px; }
+  .lb-row:last-child { border-bottom: none; }
+  .lb-rank { font-family: var(--font-head); font-size: 16px; color: var(--yellow); width: 28px; }
+  .lb-name { flex: 1; color: #bbb; }
+  .lb-score { font-family: var(--font-head); font-size: 14px; color: var(--green); }
+  .lb-you { background: rgba(0,255,136,0.06); border-radius: 8px; padding: 10px; }
+
+  /* ─── PROFILE SCREEN ──────────────────────────── */
+  .profile-orb {
+    width: 100px; height: 100px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #2a1040, #0a0020);
+    border: 2px solid var(--blue); font-size: 40px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 30px rgba(68,136,255,0.2);
+  }
+  .profile-type { font-family: var(--font-head); font-size: 20px; color: var(--blue); text-align: center; }
+  .profile-desc { font-size: 14px; color: #778; text-align: center; max-width: 400px; line-height: 1.7; }
+  .stat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; width: 100%; max-width: 420px; }
+  .stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-align: center; }
+  .stat-val { font-family: var(--font-head); font-size: 22px; font-weight: 800; color: var(--green); }
+  .stat-lbl { font-family: var(--font-mono); font-size: 10px; color: var(--muted); letter-spacing: 1px; margin-top: 3px; }
+
+  /* ─── TRANSITION FLASH ────────────────────────── */
+  #flash-overlay {
+    position: fixed; inset: 0; background: var(--red);
+    opacity: 0; pointer-events: none; z-index: 8000;
+    transition: opacity 0.12s;
+  }
+  #flash-overlay.flash { opacity: 0.15; }
+
+  /* ─── TOAST ───────────────────────────────────── */
+  #toast {
+    position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #111; border: 1px solid #334; border-radius: 8px;
+    padding: 10px 20px; font-family: var(--font-mono); font-size: 12px; color: var(--green);
+    letter-spacing: 1px; opacity: 0; transition: all 0.3s; z-index: 9990; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ─── PROGRESS BAR ────────────────────────────── */
+  .progress-wrap { width: 100%; max-width: 400px; height: 4px; background: #111; border-radius: 100px; overflow: hidden; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg, var(--red), var(--orange)); border-radius: 100px; transition: width 1s linear; }
+
+  /* ─── RESPONSIVE ──────────────────────────────── */
+  @media(max-width: 500px) {
+    .food-grid { grid-template-columns: repeat(2,1fr); }
+    .reveal-split { grid-template-columns: 1fr; }
+    .alert-row { grid-template-columns: 1fr; }
+    .food-sel-grid { grid-template-columns: repeat(2,1fr); }
+    .stat-row { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- STARS BACKGROUND -->
+<div id="stars"></div>
+<div id="flash-overlay"></div>
+<div id="toast"></div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="logo">MINDHUNTERS</div>
+  <div id="nav-back" style="display:none" onclick="goHome()">← HOME</div>
+  <div class="stats">
+    <div>IMPOSTERS: <span id="t-imp">0</span></div>
+    <div>MISSIONS: <span id="t-mis">0</span></div>
+    <div id="scan-count-hud" style="display:none">SCANS: <span id="t-scans">0</span></div>
+  </div>
+</div>
+
+<!-- EMERGENCY BTN -->
+<button id="emergency-btn" onclick="toggleEmergency()">⚡ EMERGENCY</button>
+
+<!-- EMERGENCY OVERLAY -->
+<div id="emergency-overlay">
+  <div class="tag">Emergency Mode Active</div>
+  <div class="breath-circle">BREATHE</div>
+  <div style="text-align:center;max-width:300px">
+    <div style="font-family:var(--font-head);font-size:13px;color:var(--blue);margin-bottom:8px">BOX BREATHING</div>
+    <div style="font-size:13px;color:#445;line-height:2">Inhale 4s · Hold 4s · Exhale 4s · Hold 4s</div>
+    <div style="font-size:12px;color:#334;margin-top:8px">The craving will pass. You are in control.</div>
+  </div>
+  <button class="btn blue" onclick="toggleEmergency()">I'm OK Now</button>
+</div>
+
+<!-- ════════════ SCREEN 1: ENTRY ════════════ -->
+<div class="screen active" id="s-entry">
+  <div class="entry-badge"><div class="dot"></div>SYSTEM v2.0 · ONLINE</div>
+  <div class="big-title">
+    Not everything that<br>looks like food…
+    <span class="accent">is safe.</span>
+  </div>
+  <div class="muted">Some foods are shapeshifters.<br>Some cravings are imposters. The system sees through both.</div>
+  <button class="btn lg" onclick="playClick();go('s-food')">Enter Scan System →</button>
+  <div class="mode-grid">
+    <div class="mode-card" onclick="playClick();go('s-survival')">
+      <div class="mode-icon">🛡️</div>
+      <div class="mode-name">Survival Mode</div>
+      <div class="mode-desc">Fight the craving timer</div>
+    </div>
+    <div class="mode-card" onclick="playClick();go('s-story')">
+      <div class="mode-icon">📁</div>
+      <div class="mode-name">Story Mode</div>
+      <div class="mode-desc">Case file decisions</div>
+    </div>
+    <div class="mode-card" onclick="playClick();go('s-leaderboard')">
+      <div class="mode-icon">🏆</div>
+      <div class="mode-name">Leaderboard</div>
+      <div class="mode-desc">Top hunters worldwide</div>
+    </div>
+    <div class="mode-card" onclick="playClick();go('s-profile')">
+      <div class="mode-icon">🧬</div>
+      <div class="mode-name">My Profile</div>
+      <div class="mode-desc">Craving identity scan</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ SCREEN 2: FOOD CARDS ════════════ -->
+<div class="screen" id="s-food">
+  <div class="tag">Shapeshifter Database</div>
+  <div class="head lg">They look normal. They hide threats.</div>
+  <div class="muted" style="font-size:13px">Tap each card to reveal what lurks inside.</div>
+  <div class="food-grid">
+    <div class="food-card" onclick="flipCard(this);playFlip()">
+      <div class="food-inner">
+        <div class="food-front">
+          <img class="food-img" src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200&auto=format" alt="burger" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+          <span style="display:none;font-size:40px">🍔</span>
+          <div class="food-name">BURGER</div>
+          <div class="food-hint">tap to reveal</div>
+        </div>
+        <div class="food-back">
+          <div class="threat-badge">⚠ THREAT DETECTED</div>
+          <div class="ing-pill">Trans fats</div>
+          <div class="ing-pill">High sodium</div>
+          <div class="ing-pill">Additives</div>
+          <div style="font-size:10px;color:#ff4455;margin-top:6px;text-align:center">Disguised as comfort food</div>
+        </div>
+      </div>
+    </div>
+    <div class="food-card" onclick="flipCard(this);playFlip()">
+      <div class="food-inner">
+        <div class="food-front">
+          <img class="food-img" src="https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=200&auto=format" alt="fries" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+          <span style="display:none;font-size:40px">🍟</span>
+          <div class="food-name">FRIES</div>
+          <div class="food-hint">tap to reveal</div>
+        </div>
+        <div class="food-back">
+          <div class="threat-badge">⚠ THREAT DETECTED</div>
+          <div class="ing-pill">Acrylamide</div>
+          <div class="ing-pill">Trans fats</div>
+          <div class="ing-pill">High salt</div>
+          <div style="font-size:10px;color:#ff4455;margin-top:6px;text-align:center">Disguised as a side</div>
+        </div>
+      </div>
+    </div>
+    <div class="food-card" onclick="flipCard(this);playFlip()">
+      <div class="food-inner">
+        <div class="food-front">
+          <img class="food-img" src="https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=200&auto=format" alt="soda" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+          <span style="display:none;font-size:40px">🥤</span>
+          <div class="food-name">SODA</div>
+          <div class="food-hint">tap to reveal</div>
+        </div>
+        <div class="food-back">
+          <div class="threat-badge">⚠ THREAT DETECTED</div>
+          <div class="ing-pill">High sugar</div>
+          <div class="ing-pill">Phosphoric acid</div>
+          <div class="ing-pill">Dyes</div>
+          <div style="font-size:10px;color:#ff4455;margin-top:6px;text-align:center">Disguised as thirst relief</div>
+        </div>
+      </div>
+    </div>
+    <div class="food-card" onclick="flipCard(this);playFlip()">
+      <div class="food-inner">
+        <div class="food-front">
+          <img class="food-img" src="https://images.unsplash.com/photo-1606312619070-d48b4c652a52?w=200&auto=format" alt="chocolate" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+          <span style="display:none;font-size:40px">🍫</span>
+          <div class="food-name">CHOCOLATE</div>
+          <div class="food-hint">tap to reveal</div>
+        </div>
+        <div class="food-back">
+          <div class="threat-badge">⚠ THREAT DETECTED</div>
+          <div class="ing-pill">High sugar</div>
+          <div class="ing-pill">Emulsifiers</div>
+          <div class="ing-pill">Caffeine</div>
+          <div style="font-size:10px;color:#ff4455;margin-top:6px;text-align:center">Disguised as a reward</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <button class="btn" onclick="playClick();go('s-system')">Scan This Food →</button>
+</div>
+
+<!-- ════════════ SCREEN 3: SYSTEM BOOT ════════════ -->
+<div class="screen" id="s-system">
+  <div class="sys-logo">MINDHUNTERS</div>
+  <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:3px;color:#223;margin-bottom:1rem">DETECTION SYSTEM v2.4</div>
+  <div id="sys-lines"></div>
+  <div id="sys-ready" style="display:none;text-align:center;margin-top:1.5rem;animation:screenIn 0.5s ease both">
+    <div style="font-family:var(--font-mono);font-size:12px;color:var(--green);letter-spacing:2px;margin-bottom:1rem">✓ CREWMATE DETECTED. ALL SYSTEMS READY.</div>
+    <button class="btn green" onclick="playSuccess();go('s-input')">Begin Scan →</button>
+  </div>
+</div>
+
+<!-- ════════════ SCREEN 4: INPUT ════════════ -->
+<div class="screen" id="s-input">
+  <div class="head md">Initiate Scan</div>
+  <div class="section-lbl">Select Food</div>
+  <div class="food-sel-grid">
+    <div class="food-sel" onclick="selFood(this,'Burger','trans fats + high sodium')">
+      <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=120&auto=format" alt="burger" onerror="this.outerHTML='<div style=\'font-size:30px\'>🍔</div>'">
+      <div class="sel-name">BURGER</div>
+    </div>
+    <div class="food-sel" onclick="selFood(this,'Fries','trans fats + acrylamide')">
+      <img src="https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=120&auto=format" alt="fries" onerror="this.outerHTML='<div style=\'font-size:30px\'>🍟</div>'">
+      <div class="sel-name">FRIES</div>
+    </div>
+    <div class="food-sel" onclick="selFood(this,'Soda','high sugar + dyes')">
+      <img src="https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=120&auto=format" alt="soda" onerror="this.outerHTML='<div style=\'font-size:30px\'>🥤</div>'">
+      <div class="sel-name">SODA</div>
+    </div>
+    <div class="food-sel" onclick="selFood(this,'Chocolate','high sugar + emulsifiers')">
+      <img src="https://images.unsplash.com/photo-1606312619070-d48b4c652a52?w=120&auto=format" alt="chocolate" onerror="this.outerHTML='<div style=\'font-size:30px\'>🍫</div>'">
+      <div class="sel-name">CHOCO</div>
+    </div>
+  </div>
+
+  <!-- CAMERA UPLOAD ZONE -->
+  <div class="section-lbl">Or Upload Your Own Food Photo</div>
+  <div class="camera-zone" id="camera-zone">
+    <div style="font-size:28px">📸</div>
+    <div style="font-family:var(--font-mono);font-size:11px;color:#334;letter-spacing:1px;text-align:center">
+      AI will analyze your food for hidden threats
+    </div>
+    <label class="upload-label" for="cam-input">
+      📷 Upload Photo / Take Picture
+    </label>
+    <input type="file" id="cam-input" accept="image/*" capture="environment" onchange="handleCamUpload(this)">
+    <img id="cam-preview" alt="food preview">
+    <button class="btn blue" id="cam-analyze-btn" onclick="analyzeCameraFood()">Analyze with AI →</button>
+  </div>
+
+  <div class="section-lbl">Current Mood</div>
+  <div class="mood-row">
+    <div class="mood-opt" onclick="selMood(this,'Stressed','Stress Imposter')">
+      <span class="mood-icon">😵</span>
+      <div class="mood-name">STRESSED</div>
+    </div>
+    <div class="mood-opt" onclick="selMood(this,'Bored','Boredom Imposter')">
+      <span class="mood-icon">😐</span>
+      <div class="mood-name">BORED</div>
+    </div>
+    <div class="mood-opt" onclick="selMood(this,'Tired','Lazy Imposter')">
+      <span class="mood-icon">😴</span>
+      <div class="mood-name">TIRED</div>
+    </div>
+  </div>
+  <button class="btn" id="scan-btn" onclick="playAlert();initiateScan()" style="opacity:0.35;pointer-events:none">Initiate Scan →</button>
+</div>
+
+<!-- ════════════ SCREEN 5: ALERT ════════════ -->
+<div class="screen" id="s-alert">
+  <div class="alert-ring">🚨</div>
+  <div class="alert-head">SHAPESHIFTER<span class="red">CONFIRMED</span></div>
+  <div class="alert-row">
+    <div class="alert-panel">
+      <div class="ap-label">Food Layer</div>
+      <div class="ap-content">Disguise: <strong id="a-food" style="color:#ff8888">—</strong><br>Hidden: <strong id="a-threat" style="color:var(--red)">—</strong></div>
+    </div>
+    <div class="alert-panel">
+      <div class="ap-label">Mind Layer</div>
+      <div class="ap-content">
+        Psychological Imposter Detected<br>
+        <div class="imposter-type" id="a-imposter">—</div>
+      </div>
+    </div>
+  </div>
+  <!-- AI Camera Analysis Result -->
+  <div class="ai-box" id="ai-result-box" style="display:none">
+    <div class="ai-label">🤖 AI FOOD ANALYSIS</div>
+    <div id="ai-result-text"></div>
+  </div>
+  <button class="btn" onclick="playClick();go('s-reveal')">View Full Scan →</button>
+</div>
+
+<!-- ════════════ SCREEN 6: REVEAL ════════════ -->
+<div class="screen" id="s-reveal">
+  <div class="head md">Full Scan Results</div>
+  <div class="reveal-split">
+    <div class="rev-panel mind">
+      <div class="rev-icon">🧠</div>
+      <div class="rev-title b">Mind Scan</div>
+      <div class="rev-text">You are not truly hungry.<br><br>This is <strong id="r-mood" style="color:var(--blue)">stress</strong>-based craving. Your brain seeks dopamine, not calories.</div>
+    </div>
+    <div class="rev-panel food">
+      <div class="rev-icon">🍔</div>
+      <div class="rev-title o">Food Scan</div>
+      <div class="rev-text">Contains harmful ingredients that reduce energy, focus, and long-term wellbeing.</div>
+      <button class="btn" style="font-size:10px;padding:7px 14px;margin-top:12px;border-color:var(--orange);color:var(--orange)" onclick="revealIng()">Reveal Ingredients</button>
+      <div class="ing-list" id="ing-list">
+        <div class="ing-tag" id="ing1">—</div>
+        <div class="ing-tag" id="ing2">—</div>
+        <div class="ing-tag">preservatives</div>
+        <div class="ing-tag">artificial flavoring</div>
+      </div>
+    </div>
+  </div>
+  <button class="btn" onclick="playClick();go('s-decision')">Make Your Decision →</button>
+</div>
+
+<!-- ════════════ SCREEN 7: DECISION ════════════ -->
+<div class="screen" id="s-decision">
+  <div class="tag">Trust or Doubt?</div>
+  <div class="head lg">Will you trust the shapeshifter?</div>
+  <div class="muted" id="dec-text"></div>
+  <div class="countdown-ring">
+    <div class="countdown-num" id="countdown">5</div>
+    <div class="countdown-lbl">DECIDE</div>
+  </div>
+  <div class="progress-wrap" style="max-width:120px">
+    <div class="progress-bar" id="dec-bar" style="width:100%"></div>
+  </div>
+  <div class="btn-row">
+    <button class="btn green" onclick="playSuccess();decide('fight')">🟢 Fight Imposter</button>
+    <button class="btn" onclick="playAlert();decide('give')">🔴 Give In</button>
+  </div>
+</div>
+
+<!-- ════════════ SCREEN 8: RESULT ════════════ -->
+<div class="screen" id="s-result">
+  <div class="result-burst" id="r-icon">🎉</div>
+  <div class="result-head" id="r-title">Imposter Eliminated</div>
+  <div class="muted" id="r-sub"></div>
+  <div class="savage-card" id="r-savage"></div>
+  <div class="btn-row">
+    <button class="btn green" onclick="playClick();go('s-survival')">Survival Mode</button>
+    <button class="btn blue" onclick="playClick();checkProfile()">My Profile</button>
+    <button class="btn ghost" onclick="playClick();goHome()">New Scan</button>
+  </div>
+</div>
+
+<!-- ════════════ SCREEN 9: SURVIVAL ════════════ -->
+<div class="screen" id="s-survival">
+  <div class="head md">Survival Mode</div>
+  <div class="mission-card card">
+    <div class="mission-badge">◈ ACTIVE MISSION</div>
+    <div class="mission-title">Delay the Craving</div>
+    <div style="font-size:13px;color:#556;margin-bottom:12px;line-height:1.6">Wait 10 minutes before eating. Drink water. Move. Craving intensity drops 60%.</div>
+    <div class="mission-timer" id="mission-timer">10:00</div>
+    <div class="progress-wrap" style="margin-bottom:16px">
+      <div class="progress-bar" id="mission-bar" style="width:100%;background:linear-gradient(90deg,var(--green),#00cc66)"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn green" id="mission-start-btn" onclick="startMission()">Start Mission</button>
+      <button class="btn" onclick="missionResult('completed')">Completed ✓</button>
+      <button class="btn ghost" onclick="missionResult('failed')">Failed ✗</button>
+    </div>
+  </div>
+  <div id="mission-fb" style="display:none;font-size:13px;color:#778;text-align:center;max-width:440px;animation:screenIn 0.4s ease both;line-height:1.6"></div>
+  <button class="btn ghost" onclick="playClick();go('s-entry')">← Home</button>
+</div>
+
+<!-- ════════════ SCREEN 10: STORY ════════════ -->
+<div class="screen" id="s-story">
+  <div class="case-file">
+    <div class="case-hdr">
+      <div style="font-size:28px">📁</div>
+      <div>
+        <div class="case-id">CASE FILE #007</div>
+        <div class="case-title">The Midnight Craving</div>
+      </div>
+    </div>
+    <div class="case-body">It's 11:47 PM. You finished a stressful workday. You're not hungry — dinner was two hours ago. But the craving hits hard. The fridge is calling. The shapeshifter is whispering: <em style="color:#558">"just one snack…"</em></div>
+    <button class="story-btn" onclick="playClick();storyChoose(1)">A) Open the fridge — you deserve it.</button>
+    <button class="story-btn" onclick="playClick();storyChoose(2)">B) Drink a glass of water first.</button>
+    <button class="story-btn" onclick="playClick();storyChoose(3)">C) Identify the imposter — ask yourself why.</button>
+    <div class="story-outcome" id="story-outcome"></div>
+  </div>
+  <button class="btn ghost" onclick="playClick();go('s-entry')" style="font-size:11px">← Home</button>
+</div>
+
+<!-- ════════════ SCREEN 11: LEADERBOARD ════════════ -->
+<div class="screen" id="s-leaderboard">
+  <div class="tag">Global Rankings</div>
+  <div class="head md">Top MindHunters</div>
+  <div style="width:100%;max-width:500px">
+    <div class="card lb-card" id="lb-list">
+      <div style="font-family:var(--font-mono);font-size:12px;color:#223;text-align:center;padding:20px">Loading rankings...</div>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button class="btn green" onclick="playClick();submitScore()">Submit My Score</button>
+    <button class="btn ghost" onclick="playClick();go('s-entry')">← Home</button>
+  </div>
+</div>
+
+<!-- ════════════ SCREEN 12: PROFILE ════════════ -->
+<div class="screen" id="s-profile">
+  <div class="tag">Identity Scan</div>
+  <div class="profile-orb" id="profile-orb">🧬</div>
+  <div class="profile-type" id="profile-type">Scanning...</div>
+  <div class="profile-desc" id="profile-desc">Complete more scans to generate your Craving Profile.</div>
+  <div class="stat-row">
+    <div class="stat-box">
+      <div class="stat-val" id="ps-imp">0</div>
+      <div class="stat-lbl">IMPOSTERS</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="ps-mis">0</div>
+      <div class="stat-lbl">MISSIONS</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="ps-scans">0</div>
+      <div class="stat-lbl">SCANS</div>
+    </div>
+  </div>
+  <div class="ai-box" id="profile-ai-box" style="min-height:60px">
+    <div class="ai-label">🤖 AI CRAVING PROFILE</div>
+    <div id="profile-ai-text">Loading your profile analysis...</div>
+  </div>
+  <button class="btn ghost" onclick="playClick();go('s-entry')">← Home</button>
+</div>
+
+<script>
+// ─── AUDIO ENGINE ──────────────────────────────────────
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+
+function getCtx() {
+  if (!audioCtx) audioCtx = new AudioCtx();
+  return audioCtx;
+}
+
+function playTone(freq, duration, type = 'sine', vol = 0.15, detune = 0) {
+  try {
+    const ctx = getCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = type; osc.frequency.value = freq; osc.detune.value = detune;
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start(); osc.stop(ctx.currentTime + duration);
+  } catch(e) {}
+}
+
+function playClick() {
+  playTone(880, 0.08, 'square', 0.08);
+}
+
+function playFlip() {
+  playTone(440, 0.12, 'sine', 0.1);
+  setTimeout(() => playTone(660, 0.12, 'sine', 0.08), 80);
+}
+
+function playAlert() {
+  playTone(220, 0.15, 'sawtooth', 0.12);
+  setTimeout(() => playTone(180, 0.15, 'sawtooth', 0.12), 160);
+  setTimeout(() => playTone(160, 0.2, 'sawtooth', 0.15), 320);
+}
+
+function playSuccess() {
+  playTone(523, 0.1, 'sine', 0.12);
+  setTimeout(() => playTone(659, 0.1, 'sine', 0.12), 100);
+  setTimeout(() => playTone(784, 0.2, 'sine', 0.12), 200);
+}
+
+function playType() {
+  playTone(800 + Math.random() * 200, 0.04, 'square', 0.03);
+}
+
+function playWhoosh() {
+  try {
+    const ctx = getCtx();
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.3, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for(let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i/data.length);
+    const source = ctx.createBufferSource();
+    const filter = ctx.createBiquadFilter();
+    const gain = ctx.createGain();
+    filter.type = 'bandpass'; filter.frequency.value = 800;
+    source.buffer = buf;
+    source.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    source.start();
+  } catch(e) {}
+}
+
+// ─── PROXY URL — paste your Cloudflare Worker URL here after deploying ──────
+const PROXY_URL = 'https://mindhunters-proxy.simrawasim12.workers.dev/';
+
+// ─── STATE ─────────────────────────────────────────────
+let selectedFood = null, selectedMood = null, selectedImposter = null, selectedThreat = null;
+let countdownTimer = null, missionTimer = null, missionSecs = 600;
+let impostersDetected = 0, missionsCompleted = 0, totalScans = 0;
+let camAnalysisFood = null, camAnalysisResult = null;
+let sysBooted = false;
+
+const savageFeedbacks = {
+  fight: [
+    "Control level +1. The imposter is learning to fear you.",
+    "You didn't eat the lie. Respect.",
+    "Craving defeated. Your future self said thank you.",
+    "Awareness activated. The shapeshifter ran.",
+  ],
+  give: [
+    "The shapeshifter wins again. It'll return stronger.",
+    "You're not hungry. You're procrastinating.",
+    "Boredom: 1. You: 0. Round 2?",
+    "Your dopamine spike will crash in 20 minutes. Worth it?",
+  ]
+};
+
+const storyOutcomes = {
+  1: { color: '#ff4455', text: 'You ate. The shapeshifter collected its reward — your dopamine spike will crash in 20 minutes, leaving you more tired. The Lazy Imposter just leveled up.' },
+  2: { color: '#ffaa44', text: 'Smart move. Water often eliminates false hunger signals. After 5 minutes, the craving weakened. The imposter retreated — for now.' },
+  3: { color: '#00ff88', text: 'You named the Stress Imposter. Awareness is 80% of the battle. You did not eat. Your control stat just increased. The shapeshifter cannot hide from a mindful crewmate.' }
+};
+
+// ─── STARS ─────────────────────────────────────────────
+(function() {
+  const c = document.getElementById('stars');
+  for(let i = 0; i < 100; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const sz = Math.random() * 2.5 + 0.5;
+    const dur = 2 + Math.random() * 5;
+    s.style.cssText = `width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;opacity:${Math.random()*0.5+0.05};animation:twinkle ${dur}s ${Math.random()*dur}s infinite`;
+    c.appendChild(s);
+  }
+})();
+
+// ─── SCREEN NAVIGATION ─────────────────────────────────
+function go(id) {
+  playWhoosh();
+  flashScreen();
+  setTimeout(() => {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    const nb = document.getElementById('nav-back');
+    nb.style.display = id === 's-entry' ? 'none' : 'block';
+    if(id === 's-system') runBoot();
+    if(id === 's-decision') startCountdown();
+    if(id === 's-survival') resetMission();
+    if(id === 's-leaderboard') loadLeaderboard();
+    if(id === 's-profile') loadProfile();
+    window.scrollTo(0, 0);
+  }, 80);
+}
+
+function goHome() {
+  selectedFood = selectedMood = selectedImposter = selectedThreat = null;
+  camAnalysisFood = camAnalysisResult = null;
+  document.querySelectorAll('.food-sel,.mood-opt').forEach(e => e.classList.remove('sel'));
+  const sb = document.getElementById('scan-btn');
+  sb.style.opacity = '0.35'; sb.style.pointerEvents = 'none';
+  document.getElementById('cam-preview').classList.remove('show');
+  document.getElementById('cam-analyze-btn').style.display = 'none';
+  document.getElementById('camera-zone').classList.remove('has-img');
+  document.getElementById('ai-result-box').style.display = 'none';
+  go('s-entry');
+}
+
+function flashScreen() {
+  const f = document.getElementById('flash-overlay');
+  f.classList.add('flash');
+  setTimeout(() => f.classList.remove('flash'), 200);
+}
+
+function toggleEmergency() {
+  document.getElementById('emergency-overlay').classList.toggle('show');
+}
+
+// ─── TOAST ─────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ─── FOOD FLIP ─────────────────────────────────────────
+function flipCard(el) { el.classList.toggle('flipped'); }
+
+// ─── SELECTION ─────────────────────────────────────────
+function selFood(el, food, threat) {
+  document.querySelectorAll('.food-sel').forEach(e => e.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedFood = food; selectedThreat = threat;
+  camAnalysisFood = null;
+  checkReady();
+}
+
+function selMood(el, mood, imposter) {
+  document.querySelectorAll('.mood-opt').forEach(e => e.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedMood = mood.toLowerCase(); selectedImposter = imposter;
+  checkReady();
+}
+
+function checkReady() {
+  const sb = document.getElementById('scan-btn');
+  const ready = (selectedFood || camAnalysisFood) && selectedMood;
+  sb.style.opacity = ready ? '1' : '0.35';
+  sb.style.pointerEvents = ready ? 'auto' : 'none';
+}
+
+// ─── CAMERA UPLOAD ─────────────────────────────────────
+// Stores compressed base64 for AI use
+let camBase64 = null;
+let camMimeType = 'image/jpeg';
+
+function handleCamUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  showToast('📸 Loading photo...');
+  playClick();
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      // Compress to max 800px wide — phones shoot 12MP+ images that kill the API
+      const MAX = 800;
+      let w = img.width, h = img.height;
+      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      const compressed = canvas.toDataURL('image/jpeg', 0.82);
+      camBase64 = compressed.split(',')[1];
+      camMimeType = 'image/jpeg';
+
+      const prev = document.getElementById('cam-preview');
+      prev.src = compressed;
+      prev.classList.add('show');
+      document.getElementById('cam-analyze-btn').style.display = 'inline-block';
+      document.getElementById('camera-zone').classList.add('has-img');
+      showToast('📸 Photo ready — tap Analyze to scan!');
+      playSuccess();
+    };
+    img.onerror = () => showToast('⚠ Could not load image');
+    img.src = e.target.result;
+  };
+  reader.onerror = () => showToast('⚠ File read error');
+  reader.readAsDataURL(file);
+}
+
+async function analyzeCameraFood() {
+  if (!camBase64) { showToast('⚠ No photo loaded yet'); return; }
+  playClick();
+
+  const btn = document.getElementById('cam-analyze-btn');
+  btn.textContent = '🔍 Scanning...';
+  btn.style.opacity = '0.6';
+  btn.style.pointerEvents = 'none';
+  showToast('🤖 AI is analyzing your food...');
+
+  const prompt = `You are the MindHunters AI detection system scanning a food photo. Reply ONLY in this exact format — no extra text before or after:
+
+FOOD_NAME: [name of the food you see, be specific]
+THREAT_LEVEL: [LOW / MEDIUM / HIGH / EXTREME]
+HIDDEN_INGREDIENTS: [3-4 harmful ingredients or additives, comma separated]
+SHAPESHIFTER_TYPE: [one short sentence — how this food disguises itself as healthy/safe]
+MIND_TRIGGER: [one word only: stress OR boredom OR tiredness OR reward]
+WARNING: [one savage punchy sentence warning about this food — game-like tone]
+
+If you cannot clearly identify food, use FOOD_NAME: Mystery Food and still complete all fields with general junk-food assumptions.`;
+
+  try {
+    const response = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: camMimeType, data: camBase64 }
+            },
+            { type: 'text', text: prompt }
+          ]
+        }]
+      })
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error('API error ' + response.status + ': ' + (errData?.error?.message || response.statusText));
+    }
+
+    const data = await response.json();
+    const text = (data.content?.[0]?.text || '').trim();
+    if (!text) throw new Error('Empty response from AI');
+
+    // Parse key:value lines
+    const parsed = {};
+    text.split('\n').forEach(line => {
+      const colon = line.indexOf(':');
+      if (colon > 0) {
+        const key = line.slice(0, colon).trim();
+        const val = line.slice(colon + 1).trim();
+        parsed[key] = val;
+      }
+    });
+
+    camAnalysisFood  = parsed['FOOD_NAME']          || 'Scanned Food';
+    camAnalysisResult = text;
+    selectedFood     = camAnalysisFood;
+    selectedThreat   = parsed['HIDDEN_INGREDIENTS'] || 'sugar, additives, preservatives';
+
+    // Auto-set mood from trigger
+    const trigger = (parsed['MIND_TRIGGER'] || '').toLowerCase();
+    if (trigger.includes('stress'))  { selectedImposter = 'Stress Imposter';  selectedMood = 'stressed'; }
+    else if (trigger.includes('bor')){ selectedImposter = 'Boredom Imposter'; selectedMood = 'bored'; }
+    else                              { selectedImposter = 'Lazy Imposter';    selectedMood = 'tired'; }
+
+    // Auto-select matching mood button visually
+    document.querySelectorAll('.mood-opt').forEach(e => e.classList.remove('sel'));
+    const moodMap = { stressed: 0, bored: 1, tired: 2 };
+    const moodBtns = document.querySelectorAll('.mood-opt');
+    if (moodBtns[moodMap[selectedMood]]) moodBtns[moodMap[selectedMood]].classList.add('sel');
+
+    playSuccess();
+    showToast('✅ ' + camAnalysisFood + ' scanned! Threat detected.');
+    checkReady();
+
+    btn.textContent = '✅ Scanned';
+    btn.style.opacity = '1';
+    btn.style.background = 'rgba(0,255,136,0.1)';
+    btn.style.borderColor = 'var(--green)';
+    btn.style.color = 'var(--green)';
+
+  } catch (err) {
+    console.error('AI scan error:', err);
+    // Fallback: use smart defaults so the game still works
+    camAnalysisFood   = 'Unidentified Food';
+    selectedFood      = camAnalysisFood;
+    selectedThreat    = 'hidden sugars, trans fats, preservatives';
+    selectedImposter  = 'Stress Imposter';
+    selectedMood      = 'stressed';
+    camAnalysisResult = `FOOD_NAME: Unidentified Food\nTHREAT_LEVEL: HIGH\nHIDDEN_INGREDIENTS: hidden sugars, trans fats, preservatives\nSHAPESHIFTER_TYPE: Disguised as harmless comfort food.\nMIND_TRIGGER: stress\nWARNING: Your brain doesn't know what this is — but it wants it anyway. Classic shapeshifter move.`;
+
+    document.querySelectorAll('.mood-opt').forEach(e => e.classList.remove('sel'));
+    document.querySelectorAll('.mood-opt')[0]?.classList.add('sel');
+    playAlert();
+    showToast('⚠ AI offline — using fallback scan');
+    checkReady();
+
+    btn.textContent = '⚠ Retry Scan';
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+    btn.style.borderColor = 'var(--orange)';
+    btn.style.color = 'var(--orange)';
+  }
+}
+
+// ─── INITIATE SCAN ─────────────────────────────────────
+function initiateScan() {
+  const food = selectedFood || 'Unknown Food';
+  const threat = selectedThreat || 'hidden additives';
+  document.getElementById('a-food').textContent = food;
+  document.getElementById('a-threat').textContent = threat;
+  document.getElementById('a-imposter').textContent = selectedImposter;
+  document.getElementById('r-mood').textContent = selectedMood;
+  
+  const parts = threat.split('+').map(s => s.trim());
+  document.getElementById('ing1').textContent = parts[0] || 'additives';
+  document.getElementById('ing2').textContent = parts[1] || 'sugar';
+  document.getElementById('ing-list').classList.remove('show');
+  document.getElementById('dec-text').textContent = selectedImposter + ' detected in your system.';
+  
+  // Show AI result if camera was used
+  const aiBox = document.getElementById('ai-result-box');
+  if (camAnalysisResult) {
+    aiBox.style.display = 'block';
+    typeText('ai-result-text', camAnalysisResult.replace(/FOOD_NAME:|THREAT_LEVEL:|HIDDEN_INGREDIENTS:|SHAPESHIFTER_TYPE:|MIND_TRIGGER:|WARNING:/g, '<br><strong style="color:#44aa66">$&</strong> '), 8);
+  } else {
+    aiBox.style.display = 'none';
+  }
+  
+  impostersDetected++;
+  totalScans++;
+  document.getElementById('t-imp').textContent = impostersDetected;
+  document.getElementById('scan-count-hud').style.display = 'block';
+  document.getElementById('t-scans').textContent = totalScans;
+  
+  // Shake the alert screen
+  setTimeout(() => {
+    const a = document.getElementById('s-alert');
+    a.classList.add('alert-shake');
+    setTimeout(() => a.classList.remove('alert-shake'), 500);
+  }, 200);
+  
+  go('s-alert');
+}
+
+// ─── REVEAL INGREDIENTS ────────────────────────────────
+function revealIng() {
+  playSuccess();
+  document.getElementById('ing-list').classList.add('show');
+}
+
+// ─── SYSTEM BOOT ───────────────────────────────────────
+function runBoot() {
+  if (sysBooted) { document.getElementById('sys-ready').style.display = 'block'; return; }
+  sysBooted = true;
+  const lines = ['System Online...', 'Scanning for shapeshifters...', 'Mind impostors loading...', 'Neural pathways mapped...', 'Crewmate detected.', 'Access granted.'];
+  const c = document.getElementById('sys-lines');
+  c.innerHTML = '';
+  lines.forEach((txt, i) => {
+    const d = document.createElement('div');
+    d.className = 'sys-line';
+    d.textContent = txt;
+    c.appendChild(d);
+    setTimeout(() => {
+      d.classList.add('show');
+      playType();
+      setTimeout(() => d.classList.add('done'), 950);
+    }, i * 950);
+  });
+  setTimeout(() => {
+    document.getElementById('sys-ready').style.display = 'block';
+    playSuccess();
+  }, lines.length * 950 + 300);
+}
+
+// ─── COUNTDOWN ─────────────────────────────────────────
+function startCountdown() {
+  if (countdownTimer) clearInterval(countdownTimer);
+  let t = 5;
+  document.getElementById('countdown').textContent = t;
+  document.getElementById('dec-bar').style.width = '100%';
+  countdownTimer = setInterval(() => {
+    t--;
+    document.getElementById('countdown').textContent = t;
+    document.getElementById('dec-bar').style.width = (t / 5 * 100) + '%';
+    if (t > 0) playTone(220 + t*30, 0.08, 'square', 0.06);
+    if (t <= 0) { clearInterval(countdownTimer); }
+  }, 1000);
+}
+
+// ─── DECIDE ────────────────────────────────────────────
+function decide(choice) {
+  clearInterval(countdownTimer);
+  const win = choice === 'fight';
+  document.getElementById('r-icon').textContent = win ? '🎉' : '😈';
+  document.getElementById('r-title').textContent = win ? 'Imposter Eliminated' : 'Imposter Escaped';
+  document.getElementById('r-title').style.color = win ? 'var(--green)' : 'var(--red)';
+  document.getElementById('r-sub').textContent = win
+    ? 'Control level increased. You saw through the disguise.'
+    : 'It will return stronger next time. Stay sharp.';
+  const pool = savageFeedbacks[choice];
+  document.getElementById('r-savage').textContent = '"' + pool[Math.floor(Math.random()*pool.length)] + '"';
+  go('s-result');
+}
+
+function checkProfile() {
+  go('s-profile');
+}
+
+// ─── SURVIVAL MODE ─────────────────────────────────────
+function resetMission() {
+  clearInterval(missionTimer);
+  missionSecs = 600;
+  document.getElementById('mission-timer').textContent = '10:00';
+  document.getElementById('mission-bar').style.width = '100%';
+  document.getElementById('mission-fb').style.display = 'none';
+  document.getElementById('mission-start-btn').textContent = 'Start Mission';
+  document.getElementById('mission-start-btn').style.opacity = '1';
+  document.getElementById('mission-start-btn').style.pointerEvents = 'auto';
+}
+
+function startMission() {
+  clearInterval(missionTimer);
+  playClick();
+  const btn = document.getElementById('mission-start-btn');
+  btn.textContent = 'Running...';
+  btn.style.opacity = '0.5'; btn.style.pointerEvents = 'none';
+  showToast('⏱ Mission started — hold on!');
+  missionTimer = setInterval(() => {
+    missionSecs--;
+    const m = Math.floor(missionSecs/60), s = missionSecs%60;
+    document.getElementById('mission-timer').textContent = m + ':' + String(s).padStart(2,'0');
+    document.getElementById('mission-bar').style.width = (missionSecs/600*100) + '%';
+    if (missionSecs <= 60) playTone(440, 0.04, 'sine', 0.04);
+    if (missionSecs <= 0) { clearInterval(missionTimer); missionResult('completed'); }
+  }, 1000);
+}
+
+function missionResult(r) {
+  clearInterval(missionTimer);
+  const fb = document.getElementById('mission-fb');
+  fb.style.display = 'block';
+  if (r === 'completed') {
+    missionsCompleted++;
+    document.getElementById('t-mis').textContent = missionsCompleted;
+    fb.textContent = '✓ Mission complete. Craving window passed. You won. The shapeshifter retreated.';
+    fb.style.color = 'var(--green)';
+    playSuccess();
+    showToast('🎉 Mission Complete! +1 mission');
+  } else {
+    fb.textContent = '✗ Mission failed. The imposter exploited your moment. Data collected — you will do better.';
+    fb.style.color = 'var(--red)';
+    playAlert();
+  }
+}
+
+// ─── STORY MODE ────────────────────────────────────────
+function storyChoose(n) {
+  const o = storyOutcomes[n];
+  const el = document.getElementById('story-outcome');
+  el.textContent = o.text;
+  el.style.borderColor = o.color + '44';
+  el.style.color = o.color;
+  el.classList.add('show');
+  if (n === 3) playSuccess(); else if (n === 1) playAlert(); else playClick();
+}
+
+// ─── LEADERBOARD ───────────────────────────────────────
+const defaultBoard = [
+  { name: 'CREWMATE_X', score: 47, badge: '🏆' },
+  { name: 'MINDGUARD', score: 38, badge: '🥈' },
+  { name: 'SHAPESLAYER', score: 31, badge: '🥉' },
+  { name: 'ALPHA_SCAN', score: 25, badge: '⭐' },
+  { name: 'CREWMATE_7', score: 18, badge: '⭐' },
+];
+
+async function loadLeaderboard() {
+  const list = document.getElementById('lb-list');
+  list.innerHTML = '';
+  
+  // Load from persistent storage
+  let board = [...defaultBoard];
+  try {
+    const res = await window.storage.get('lb-scores', true);
+    if (res && res.value) {
+      const saved = JSON.parse(res.value);
+      // Merge saved scores with defaults
+      saved.forEach(s => {
+        const idx = board.findIndex(b => b.name === s.name);
+        if (idx >= 0) board[idx].score = Math.max(board[idx].score, s.score);
+        else board.push(s);
+      });
+    }
+  } catch(e) {}
+  
+  board.sort((a,b) => b.score - a.score);
+  
+  // Check if current user is on board
+  const myScore = impostersDetected + missionsCompleted;
+  const myName = 'YOU';
+  
+  board.slice(0, 8).forEach((entry, i) => {
+    const row = document.createElement('div');
+    row.className = 'lb-row' + (entry.name === myName ? ' lb-you' : '');
+    row.innerHTML = `
+      <div class="lb-rank">${entry.badge || (i+1)}</div>
+      <div class="lb-name">${entry.name}</div>
+      <div class="lb-score">${entry.score} pts</div>
+    `;
+    list.appendChild(row);
+  });
+  
+  // Show my current score
+  const myRow = document.createElement('div');
+  myRow.style.cssText = 'margin-top:12px;padding:10px;background:rgba(0,255,136,0.05);border:1px solid rgba(0,255,136,0.2);border-radius:8px;font-size:12px;color:#556;font-family:var(--font-mono);text-align:center';
+  myRow.textContent = `YOUR CURRENT SCORE: ${myScore} pts (${impostersDetected} imposters + ${missionsCompleted} missions)`;
+  list.appendChild(myRow);
+}
+
+async function submitScore() {
+  const myScore = impostersDetected + missionsCompleted;
+  if (myScore === 0) { showToast('⚠ Complete some scans first!'); return; }
+  try {
+    const res = await window.storage.get('lb-scores', true);
+    let board = [];
+    if (res && res.value) board = JSON.parse(res.value);
+    const ts = Date.now();
+    board.push({ name: 'HUNTER_' + ts.toString().slice(-4), score: myScore, badge: '⭐' });
+    board.sort((a,b) => b.score - a.score);
+    await window.storage.set('lb-scores', JSON.stringify(board.slice(0, 20)), true);
+    showToast('🏆 Score submitted!');
+    playSuccess();
+    loadLeaderboard();
+  } catch(e) {
+    showToast('✓ Score noted locally');
+  }
+}
+
+// ─── PROFILE & AI CRAVING REPORT ───────────────────────
+async function loadProfile() {
+  document.getElementById('ps-imp').textContent = impostersDetected;
+  document.getElementById('ps-mis').textContent = missionsCompleted;
+  document.getElementById('ps-scans').textContent = totalScans;
+  
+  // Determine profile type based on stats
+  let profileType, profileEmoji, profileDesc;
+  if (totalScans === 0) {
+    profileType = 'NEW RECRUIT';
+    profileEmoji = '🔍';
+    profileDesc = 'Start scanning to reveal your craving identity.';
+  } else if (impostersDetected > missionsCompleted * 2) {
+    profileType = 'STRESS HUNTER';
+    profileEmoji = '😤';
+    profileDesc = 'Your cravings are mostly stress-driven. You detect imposters but struggle to neutralize them.';
+  } else if (missionsCompleted > impostersDetected) {
+    profileType = 'IRON CREWMATE';
+    profileEmoji = '🛡️';
+    profileDesc = 'Exceptional willpower. You complete missions and resist shapeshifters with precision.';
+  } else {
+    profileType = 'AWARE HUNTER';
+    profileEmoji = '🧬';
+    profileDesc = 'You understand the system. Balanced awareness and resistance capabilities.';
+  }
+  
+  document.getElementById('profile-type').textContent = profileType;
+  document.getElementById('profile-orb').textContent = profileEmoji;
+  document.getElementById('profile-desc').textContent = profileDesc;
+  
+  // Generate AI craving profile
+  const aiBox = document.getElementById('profile-ai-text');
+  aiBox.textContent = 'Generating your personalized craving profile...';
+  aiBox.classList.add('ai-typing');
+  
+  try {
+    const response = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 300,
+        messages: [{
+          role: 'user',
+          content: `You are the MindHunters AI profiler. Based on these stats, generate a short personalized "Craving Identity Profile" in a punchy, game-like tone (max 80 words):
+
+Stats:
+- Imposters detected: ${impostersDetected}
+- Missions completed: ${missionsCompleted}
+- Total scans: ${totalScans}
+- Profile type: ${profileType}
+
+Write 2-3 short punchy sentences like an Among Us character profile crossed with a psychological assessment. Be direct, a little savage, insightful. Reference their numbers. End with one actionable tip. No headers, no bullet points, just straight text.`
+        }]
+      })
+    });
+    if (!response.ok) throw new Error('API ' + response.status);
+    const data = await response.json();
+    const text = (data.content?.[0]?.text || profileDesc).trim();
+    aiBox.classList.remove('ai-typing');
+    typeText('profile-ai-text', text, 18);
+  } catch(e) {
+    aiBox.classList.remove('ai-typing');
+    aiBox.textContent = profileDesc;
+  }
+}
+
+// ─── TYPEWRITER EFFECT ─────────────────────────────────
+function typeText(elId, text, speed = 20) {
+  const el = document.getElementById(elId);
+  el.innerHTML = '';
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i < text.length) {
+      el.innerHTML = text.slice(0, i + 1);
+      i++;
+      if (i % 4 === 0) playType();
+    } else {
+      clearInterval(interval);
+    }
+  }, speed);
+}
+</script>
+</body>
+</html>
